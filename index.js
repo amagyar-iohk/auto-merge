@@ -1,6 +1,5 @@
 const gh = require('@actions/github');
 const core = require('@actions/core');
-const colors = require('colors')
 
 async function run() {
     const token = process.env.GITHUB_TOKEN
@@ -24,9 +23,9 @@ async function run() {
     const labeledPullRequests = pullRequests.filter(pr => pr.labels.filter(label => label.name == 'autoupdate').length > 0)
 
     for (let pr of labeledPullRequests) {
-        console.info("Check pull request number [".blue + `${pr.number}`.yellow + "]".blue)
-        console.info("  -", "title:".blue, pr.title)
-        console.info("  -", "url:".blue, pr.html_url)
+        console.info("Check pull request number [" + `${pr.number}` + "]")
+        console.info("  -", "title:", pr.title)
+        console.info("  -", "url:", pr.html_url)
         try {
             let changes = await github.rest.repos.compareCommits({
                 ...context.repo,
@@ -40,12 +39,12 @@ async function run() {
 
             // after merging main to PR the comparison becomes 'behind'
             if (changes.data.status == 'behind') {
-                console.info("  -", "comparison to main:".blue, "no changes detected".green)
+                console.info("  -", "comparison to main:", "no changes detected")
                 console.info()
                 continue
             }
 
-            console.info("  -", "comparison to main:".blue, "changes detected".red)
+            console.info("  -", "comparison to main:", "changes detected")
 
             // merge main to pull request
             let updateResult = await github.rest.pulls.updateBranch({
