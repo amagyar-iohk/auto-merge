@@ -1,7 +1,5 @@
 name: Auto Merge Main into Feature Branch
 
-# Automatically merge main into a feature branch when a pull request is labeled with 'autoupdate'
-
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
@@ -10,7 +8,9 @@ jobs:
   auto-merge:
     if: contains(github.event.pull_request.labels.*.name, 'autoupdate')
     runs-on: ubuntu-latest
-
+    permissions:
+        contents: read
+        issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
