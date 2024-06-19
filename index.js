@@ -23,24 +23,24 @@ async function run() {
     const labeledPullRequests = pullRequests.filter(pr => pr.labels.filter(label => label.name == 'autoupdate').length > 0)
 
     for (let pr of labeledPullRequests) {
-        console.info("Updating pull request:", pr.title, pr.issue_url)
+        console.info("Updating pull request:", pr.title, "-", pr.issue_url)
 
-        console.log("head", pr.head.sha)
-        console.info("base", pr.base.sha)
+        console.log("head", pr.head.ref)
+        console.info("base", pr.base.ref)
 
         try {
             let result = await github.rest.repos.compareCommits({
                 ...context.repo,
-                base: pr.head.sha,
-                head: pr.base.sha,
+                base: pr.head.ref,
+                head: pr.base.ref,
                 mediaType: {
-                    format: "application/vnd.github.diff"
+                    format: "diff"
                 }
             });
 
             console.log(result)
 
-            // let result = await github.rest.pulls.updateBranch({
+            //  await github.rest.pulls.updateBranch({
             //     ...context.repo,
             //     expected_head_sha: pr.head.sha,
             //     pull_number: pr.number,
