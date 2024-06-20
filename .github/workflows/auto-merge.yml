@@ -1,63 +1,76 @@
 name: Auto Merge Main into Feature Branch
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - main
 
 jobs:
   auto-merge:
-    if: contains(github.event.pull_request.labels.*.name, 'autoupdate')
     runs-on: ubuntu-latest
     permissions:
-        contents: read
-        issues: write
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main
 
-      - name: Fetch all branches
-        run: git fetch origin
-
-      - name: Checkout the feature branch
-        run: git checkout ${{ github.event.pull_request.head.ref }}
-
-      - name: Merge main into feature branch
-        run: git merge --squash origin/main
-
-      - name: Commit changes
-        if: success()  
-        run: git commit -m "Merge main into ${{ github.event.pull_request.head.ref }}"
-        
-      - name: Push changes
-        if: success()
-        run: git push origin ${{ github.event.pull_request.head.ref }}
-        
-      - name: Add comment to PR
-        if: success()
+      - name: ♼ Update PRs
         uses: actions/github-script@v7
+        id: my-script
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          retries: 3
           script: |
-            const prNumber = ${{ github.event.pull_request.number }};
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: 'The main branch has been successfully merged into this feature branch! :rocket:'
-            });
+            const { data: pullRequests } = await github.rest.pulls.list({
+                base: 'main',
+                sort: 'updated',
+                state: 'open',
+                ...context.repo
+            })
+            const labeledPullRequests = pullRequests.filter(pr => pr.labels.filter(label => label.name == 'autoupdate').length > 0)
 
-      - name: Add sad comment to PR
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const prNumber = ${{ github.event.pull_request.number }};
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: 'The main branch cannot be merged into the feature branch without your help :cry:'
-            });
+            for (let pr of labeledPullRequests) {
+                console.info("Check pull request number [" + `${pr.number}` + "]")
+                console.info("  -", "title:", pr.title)
+                console.info("  -", "url:", pr.html_url)
+                try {
+                    let changes = await github.rest.repos.compareCommits({
+                        ...context.repo,
+                        base: pr.head.ref,
+                        head: pr.base.ref,
+                        // mediaType: {
+                        //     format: "diff"
+                        // }
+                    });
+
+
+                    // after merging main to PR the comparison becomes 'behind'
+                    if (changes.data.status == 'behind') {
+                        console.info("  -", "comparison to main:", "no changes detected")
+                        console.info()
+                        continue
+                    }
+
+                    console.info("  -", "comparison to main:", "changes detected")
+
+                    // merge main to pull request
+                    let updateResult = await github.rest.pulls.updateBranch({
+                        ...context.repo,
+                        expected_head_sha: pr.head.sha,
+                        pull_number: pr.number,
+                    });
+
+                    // comment on pull request
+                    let commentMessage = updateResult.status == 202 ? "Merge success" : "Merge failed"
+                    let commentResult = await github.rest.issues.createComment({
+                        ...context.repo,
+                        issue_number: pr.number,
+                        body: commentMessage
+                    });
+                    console.info("  - comment created", commentResult.status == 201 ? "successfully" : "unsuccessfully")
+                    console.info()
+                } catch (err) {
+                    core.error(err);
+                }
+            }
