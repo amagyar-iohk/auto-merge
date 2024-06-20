@@ -26,11 +26,11 @@ jobs:
             let pr = {
               number: ${{ github.event.pull_request.number }},
               head: {
-                sha: ${{ github.event.pull_request.head.sha }},
-                ref: ${{ github.event.pull_request.head.ref }}
+                sha: "${{ github.event.pull_request.head.sha }}",
+                ref:"${{ github.event.pull_request.head.ref }}"
               },
               base: {
-                ref: ${{ github.event.pull_request.base.ref }}
+                ref: "${{ github.event.pull_request.base.ref }}"
               }
             }
 
