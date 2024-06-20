@@ -42,23 +42,7 @@ jobs:
               basehead: `${pr.head.ref}...${pr.base.ref}`
             });
 
-            // after merging main to PR the comparison becomes 'behind'
-            if (changes.data.status == 'behind') {
-              console.info("no changes detected")
-            } else {
-              console.info("changes detected")
-              let updateResult = await github.rest.pulls.updateBranch({
-                  ...context.repo,
-                  expected_head_sha: pr.head.sha,
-                  pull_number: pr.number,
-              });
-              let commentMessage = updateResult.status == 202 ? ":rocket: Merge success!" : ":bangbang: Merge failed!"
-              let commentResult = await github.rest.issues.createComment({
-                  ...context.repo,
-                  issue_number: pr.number,
-                  body: commentMessage
-              });
-            }
+            console.info(changes)
 
 
   on-main-push:
