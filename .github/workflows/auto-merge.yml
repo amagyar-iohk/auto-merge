@@ -26,12 +26,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = ${{ github.event.pull_request.number }}
-            let updateResult = await github.rest.pulls.updateBranch({
-                ...context.repo,
-                expected_head_sha: pr.head.sha,
-                pull_number: prNumber,
-            });
+            console.log(context)
+            # const prNumber = ${{ github.event.pull_request.number }}
+            # let updateResult = await github.rest.pulls.updateBranch({
+            #     ...context.repo,
+            #     expected_head_sha: pr.head.sha,
+            #     pull_number: prNumber,
+            # });
 
   on-main-push:
     if: github.event_name == 'push'
