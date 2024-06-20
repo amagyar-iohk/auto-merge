@@ -1,5 +1,6 @@
 const gh = require('@actions/github');
 const core = require('@actions/core');
+const { execSync } = require('child_process');
 
 async function run() {
     const token = process.env.GITHUB_TOKEN
@@ -30,38 +31,31 @@ async function run() {
             let changes = await github.rest.repos.compareCommits({
                 ...context.repo,
                 base: pr.head.ref,
-                head: pr.base.ref,
-                // mediaType: {
-                //     format: "diff"
-                // }
+                head: pr.base.ref
             });
 
 
             // after merging main to PR the comparison becomes 'behind'
-            if (changes.data.status == 'behind') {
-                console.info("  -", "comparison to main:", "no changes detected")
-                console.info()
-                continue
-            }
+            // if (changes.data.status == 'behind') {
+            //     console.info("  -", "comparison to main:", "no changes detected")
+            //     console.info()
+            //     continue
+            // }
 
-            console.info("  -", "comparison to main:", "changes detected")
+            // console.info("  -", "comparison to main:", "changes detected")
 
             // merge main to pull request
-            let updateResult = await github.rest.pulls.updateBranch({
-                ...context.repo,
-                expected_head_sha: pr.head.sha,
-                pull_number: pr.number,
-            });
-
+            let a = execSync('git log').toString()
+            console.log(a)
             // comment on pull request
-            let commentMessage = updateResult.status == 202 ? "Merge success" : "Merge failed"
-            let commentResult = await github.rest.issues.createComment({
-                ...context.repo,
-                issue_number: pr.number,
-                body: commentMessage
-            });
-            console.info("  - comment created", commentResult.status == 201 ? "successfully" : "unsuccessfully")
-            console.info()
+            // let commentMessage = updateResult.status == 202 ? "Merge success" : "Merge failed"
+            // let commentResult = await github.rest.issues.createComment({
+            //     ...context.repo,
+            //     issue_number: pr.number,
+            //     body: commentMessage
+            // });
+            // console.info("  - comment created", commentResult.status == 201 ? "successfully" : "unsuccessfully")
+            // console.info()
         } catch (err) {
             core.error(err);
         }
