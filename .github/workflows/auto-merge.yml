@@ -27,7 +27,7 @@ jobs:
         with:
           script: |
             let pr = {
-              number: github.event.pull_request.number,
+              number: github.event.pull_request.number
               head: {
                 sha: ${{ github.event.pull_request.head.sha }},
                 ref: ${{ github.event.pull_request.head.ref }}
@@ -44,21 +44,22 @@ jobs:
 
             // after merging main to PR the comparison becomes 'behind'
             if (changes.data.status == 'behind') {
-                console.info("  -", "comparison to main:", "no changes detected")
-                console.info()
-                continue
+              console.info("no changes detected")
+            } else {
+              console.info("changes detected")
+              let updateResult = await github.rest.pulls.updateBranch({
+                  ...context.repo,
+                  expected_head_sha: pr.head.sha,
+                  pull_number: pr.number,
+              });
+              let commentMessage = updateResult.status == 202 ? ":rocket: Merge success!" : ":bangbang: Merge failed!"
+              let commentResult = await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: pr.number,
+                  body: commentMessage
+              });
             }
-            let updateResult = await github.rest.pulls.updateBranch({
-                ...context.repo,
-                expected_head_sha: pr.head.sha,
-                pull_number: pr.number,
-            });
-            let commentMessage = updateResult.status == 202 ? ":rocket: Merge success!" : ":bangbang: Merge failed!"
-            let commentResult = await github.rest.issues.createComment({
-                ...context.repo,
-                issue_number: pr.number,
-                body: commentMessage
-            });
+
 
   on-main-push:
     if: github.event_name == 'push'
