@@ -14,7 +14,7 @@ permissions:
 jobs:
 
   on-pull-request:
-    if: contains(github.event.pull_request.labels.*.name, 'autoupdate')
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'autoupdate')
     runs-on: ubuntu-latest
 
     steps:
@@ -33,6 +33,7 @@ jobs:
             });
 
   on-main-push:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
