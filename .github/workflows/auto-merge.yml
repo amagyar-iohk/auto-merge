@@ -12,7 +12,6 @@ on:
 
 jobs:
   update-pull-requests:
-    if: contains(github.event.pull_request.labels.*.name, 'autoupdate')
     runs-on: ubuntu-latest
     continue-on-error: true
 
@@ -45,7 +44,7 @@ jobs:
               }
             }
 
-            if (github.event_name === 'pull_request') {
+            if (github.event_name === 'pull_request' && github.event.pull_request.labels.some(label => label.name === 'autoupdate')) {
               const pr = github.event.pull_request;
               await updatePullRequest(pr);
             } else if (github.event_name === 'push') {
